@@ -4,7 +4,7 @@
   "theme_color": "#43281C",
   "display": "standalone",
   "background_color": "#EFEFEF",
-  "start_url": "/coffemasters/index.html",
+  "start_url": "/",
   "scope": "/",
 
   "description": "The app for order at Coffee Masters, the best coffee shop in the Frontend world, by Frontend Masters.",
