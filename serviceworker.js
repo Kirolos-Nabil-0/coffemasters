@@ -6,51 +6,50 @@ self.addEventListener("install", async (event) => {
     (async () => {
       const cache = await caches.open(CACHE_NAME);
       const cacheArr = [
-        "/index.html",
-        "/styles.css",
-        "/app.js",
-        "/app.webmanifest",
-        "/images/icons/icon.png",
+        "/coffemasters/index.html",
+        "/coffemasters/styles.css",
+        "/coffemasters/app.js",
+        "/coffemasters/app.webmanifest",
+        "/coffemasters/images/icons/icon.png",
       ];
       await cache.addAll(cacheArr);
     })()
   );
 });
 
-// Fetch event: Cache all fetched resources dynamically
+// Fetch event: Cache all fetched resources dynamically and handle SPA routing
 self.addEventListener("fetch", async (event) => {
   if (event.request.method === "GET") {
     event.respondWith(
       (async () => {
+        // Handle SPA navigation by serving index.html
+        if (event.request.mode === "navigate") {
+          const cache = await caches.open(CACHE_NAME);
+          const cachedResponse = await cache.match("/coffemasters/index.html");
+          return cachedResponse || fetch("/coffemasters/index.html");
+        }
+
         const cachedResponse = await caches.match(event.request);
         if (cachedResponse) {
-          return cachedResponse; // Return cached response if available
+          return cachedResponse;
         }
 
         const cache = await caches.open(CACHE_NAME);
         const response = await fetch(event.request);
 
-        // Cache every PNG file dynamically
         if (event.request.url.endsWith(".png")) {
           cache.put(event.request, response.clone());
         } else if (event.request.url.endsWith(".js")) {
           cache.put(event.request, response.clone());
         } else if (event.request.url.endsWith(".css")) {
           cache.put(event.request, response.clone());
-        }
-        // every font
-        else if (event.request.url.includes("fonts.googleapis.com")) {
+        } else if (event.request.url.includes("fonts.googleapis.com")) {
           cache.put(event.request, response.clone());
         }
 
         return response;
       })()
     );
-  }
-  if (event.request.mode === "navigate") {
-    const cache = await caches.open(CACHE_NAME);
-    const cachedResponse = await cache.match("/index.html");
-    return cachedResponse || fetch("/index.html");
   }
 });
 
