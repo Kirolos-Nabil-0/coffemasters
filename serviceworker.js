@@ -22,28 +22,34 @@ self.addEventListener("fetch", async (event) => {
   if (event.request.method === "GET") {
     event.respondWith(
       (async () => {
-        // Handle SPA navigation by serving index.html
-        if (event.request.mode === "navigate") {
+        const requestUrl = new URL(event.request.url);
+
+        // Handle SPA navigation by serving index.html for HTML pages
+        if (
+          event.request.mode === "navigate" ||
+          requestUrl.pathname.endsWith(".html")
+        ) {
           const cache = await caches.open(CACHE_NAME);
           const cachedResponse = await cache.match("/coffemasters/index.html");
           return cachedResponse || fetch("/coffemasters/index.html");
         }
 
+        // Try to respond with the cached resource
         const cachedResponse = await caches.match(event.request);
         if (cachedResponse) {
           return cachedResponse;
         }
 
+        // Fetch the resource from the network and cache it
         const cache = await caches.open(CACHE_NAME);
         const response = await fetch(event.request);
 
-        if (event.request.url.endsWith(".png")) {
-          cache.put(event.request, response.clone());
-        } else if (event.request.url.endsWith(".js")) {
-          cache.put(event.request, response.clone());
-        } else if (event.request.url.endsWith(".css")) {
-          cache.put(event.request, response.clone());
-        } else if (event.request.url.includes("fonts.googleapis.com")) {
+        if (
+          event.request.url.endsWith(".png") ||
+          event.request.url.endsWith(".js") ||
+          event.request.url.endsWith(".css") ||
+          event.request.url.includes("fonts.googleapis.com")
+        ) {
           cache.put(event.request, response.clone());
         }
 
