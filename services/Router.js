@@ -3,74 +3,66 @@ const Router = {
     document.querySelectorAll("a.navlink").forEach((a) => {
       a.addEventListener("click", (event) => {
         event.preventDefault();
-        const url = event.target.getAttribute("href");
-        Router.go(url);
+        const href = event.target.getAttribute("href");
+        Router.go(href);
       });
     });
-
-    // Event Handler for URL changes
+    // It listen for history changes
     window.addEventListener("popstate", (event) => {
-      if (event.state && event.state.route) {
-        Router.go(event.state.route, false);
-      } else {
-        Router.go(location.pathname, false);
-      }
+      Router.go(event.state.route, false);
     });
-
-    // Check the initial URL
-    Router.go(location.pathname, false);
+    // Process initial URL
+    Router.go(location.pathname);
   },
-
   go: async (route, addToHistory = true) => {
-    console.log(`Going to ${route}`);
-
     if (addToHistory) {
       history.pushState({ route }, "", route);
     }
-
     let pageElement = null;
     switch (route) {
       case "/":
         pageElement = document.createElement("menu-page");
+        Router.setMetadata("Menu", "#43281C");
         break;
-
       case "/order":
+        // Lazy Load
+        await import("../components/OrderPage.js");
         pageElement = document.createElement("order-page");
+        Router.setMetadata("Order", "blue");
         break;
-
       default:
         if (route.startsWith("/product-")) {
           pageElement = document.createElement("details-page");
-          const paramId = route.substring(route.lastIndexOf("-") + 1);
-          pageElement.dataset.productId = paramId;
+          pageElement.dataset.productId = route.substring(
+            route.lastIndexOf("-") + 1
+          );
+          Router.setMetadata("Details", "green");
         }
+        break;
     }
-
     if (pageElement) {
       function changePage() {
-        const cache = document.querySelector("main");
-        cache.innerHTML = ""; // Clear current content
-        cache.appendChild(pageElement); // Append new content
-        window.scrollTo(0, 0); // Reset scroll position
-      }
-
-      if (document.startViewTransition) {
-        try {
-          document.startViewTransition(changePage);
-        } catch (error) {
-          console.warn(
-            "View Transition API failed. Falling back to normal rendering.",
-            error
-          );
-          changePage();
+        // get current page element
+        let currentPage = document.querySelector("main").firstElementChild;
+        if (currentPage) {
+          currentPage.remove();
+          document.querySelector("main").appendChild(pageElement);
+        } else {
+          document.querySelector("main").appendChild(pageElement);
         }
-      } else {
-        changePage();
       }
-    } else {
-      // Handle 404
-      document.querySelector("main").innerHTML = "Oops, 404! Page not found.";
+      if (!document.startViewTransition) {
+        changePage();
+      } else {
+        document.startViewTransition(() => changePage());
+      }
     }
+
+    window.scrollX = 0;
+  },
+  setMetadata(section, color) {
+    document.title = `${section} - Coffee Masters`;
+    document.querySelector("meta[name=theme-color]").content = color;
   },
 };
 
